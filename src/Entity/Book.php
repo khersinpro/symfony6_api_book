@@ -18,12 +18,12 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @Hateoas\Relation(
  *      "update",
  *      href = @Hateoas\Route("book.update.one", parameters = { "id" = "expr(object.getId())" }),
- *      exclusion = @Hateoas\Exclusion(groups="getbooks")
+ *      exclusion = @Hateoas\Exclusion(groups="getbooks", excludeIf = "expr(not is_granted('ROLE_ADMIN'))")
  * )
  * @Hateoas\Relation(
  *      "delete",
  *      href = @Hateoas\Route("book.delete.one", parameters = { "id" = "expr(object.getId())" }),
- *      exclusion = @Hateoas\Exclusion(groups="getbooks")
+ *      exclusion = @Hateoas\Exclusion(groups="getbooks", excludeIf = "expr(not is_granted('ROLE_ADMIN'))")
  * )
  *
  */

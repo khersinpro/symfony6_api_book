@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
@@ -21,8 +22,10 @@ class BookController extends AbstractController
     #[Route('/api/book', name: 'book.get.all', methods: ['GET'])]
     public function getBookList(BookRepository $bookRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
+        $user = $this->getUser();
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 3);
+        return $this->json($user, 200);
 
         $idCache = "getBookList-$page-$limit";
 
@@ -45,6 +48,7 @@ class BookController extends AbstractController
         return new JsonResponse($jsonBook, Response::HTTP_OK, ['accept' => 'json'], true);
     }
 
+    #[IsGranted("ROLE_ADMIN")]
     #[Route('/api/book/create', name: 'book.create.one', methods: ['POST'])]
     public function createBook(SerializerInterface $serializer, Request $request, BookRepository $bookRepository, AuthorRepository $authorRepository,
         ValidatorInterface $validator, TagAwareCacheInterface $cache
@@ -53,7 +57,7 @@ class BookController extends AbstractController
         $requestData = $request->toArray();
         $book = $serializer->deserialize($request->getContent(), Book::class, 'json');
         $book->setAuthor($authorRepository->find($requestData['author_id']?? -1));
-
+        
         $errors = $validator->validate($book);
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), Response::HTTP_BAD_REQUEST, [], true);
@@ -64,10 +68,11 @@ class BookController extends AbstractController
 
         return new JsonResponse(null, Response::HTTP_CREATED, []);
     }
-
+    
+    #[IsGranted("ROLE_ADMIN")]
     #[Route('/api/book/update/{id}', name: 'book.update.one', methods: ['PUT'])]
     public function updateBook(Book $currentBook, SerializerInterface $serializer, Request $request, ValidatorInterface $validator, 
-        AuthorRepository $authorRepository, BookRepository $bookRepository, TagAwareCacheInterface $cache
+    AuthorRepository $authorRepository, BookRepository $bookRepository, TagAwareCacheInterface $cache
     ): JsonResponse
     {
         $requestData = $request->toArray();
@@ -77,17 +82,18 @@ class BookController extends AbstractController
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), Response::HTTP_BAD_REQUEST, [], true);
         }
-
+        
         $currentBook->setTitle($newBook->getTitle());
         $currentBook->setContent($newBook->getContent());
         $currentBook->setAuthor($authorRepository->find($requestData['author_id']?? -1));
-
+        
         $bookRepository->save($currentBook, true);
         $cache->invalidateTags(['booksCache']);
-
+        
         return new JsonResponse(null, Response::HTTP_NO_CONTENT, ['accept' => 'json']);
     }
 
+    #[IsGranted("ROLE_ADMIN")]
     #[Route('/api/book/delete/{id}', name: 'book.delete.one', methods: ['DELETE'])]
     public function deleteBook(Book $book, SerializerInterface $serializer, BookRepository $bookRepository, TagAwareCacheInterface $cache): JsonResponse
     {
