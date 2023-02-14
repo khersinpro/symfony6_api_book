@@ -6,15 +6,23 @@ use App\Repository\BookRepository;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Groups;
 use Hateoas\Configuration\Annotation as Hateoas;
+use Symfony\Component\Validator\Constraints as Assert;
 
 
 /**
  * @Hateoas\Relation(
  *      "self",
- *      href = @Hateoas\Route(
- *          "book.get.one",
- *          parameters = { "id" = "expr(object.getId())" }
- *      ),
+ *      href = @Hateoas\Route("book.get.one", parameters = { "id" = "expr(object.getId())" }),
+ *      exclusion = @Hateoas\Exclusion(groups="getbooks")
+ * )
+ * @Hateoas\Relation(
+ *      "update",
+ *      href = @Hateoas\Route("book.update.one", parameters = { "id" = "expr(object.getId())" }),
+ *      exclusion = @Hateoas\Exclusion(groups="getbooks")
+ * )
+ * @Hateoas\Relation(
+ *      "delete",
+ *      href = @Hateoas\Route("book.delete.one", parameters = { "id" = "expr(object.getId())" }),
  *      exclusion = @Hateoas\Exclusion(groups="getbooks")
  * )
  *
@@ -30,10 +38,20 @@ class Book
     
     #[ORM\Column(length: 255)]
     #[Groups(['getbooks'])]
+    #[Assert\NotBlank(message: 'Ce champ ne doit pas être vide.')]
+    #[Assert\Length(min: 2, max: 255, 
+        minMessage: 'Ce champ doit contenir au minimum {{ limit }} caractères.', 
+        maxMessage: 'Ce champ ne doit pas contenir plus de {{ limit }} caractères.'
+    )]
     private ?string $title = null;
     
     #[ORM\Column(length: 255)]
     #[Groups(['getbooks'])]
+    #[Assert\NotBlank(message: 'Ce champ ne doit pas être vide.')]
+    #[Assert\Length(min: 2, max: 255, 
+        minMessage: 'Ce champ doit contenir au minimum {{ limit }} caractères.', 
+        maxMessage: 'Ce champ ne doit pas contenir plus de {{ limit }} caractères.'
+    )]
     private ?string $content = null;
     
     #[ORM\ManyToOne(inversedBy: 'books',targetEntity: Author::class)]
