@@ -1,0 +1,75 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Books
+            description: Books api
+            version: 2.0.0
+        paths:
+            /api/login_check:
+                post:
+                    operationId: postCredentialsItem
+                    tags:
+                        - Authentification
+                    summary: Permet d'obtenir le token JWT pour se logger.
+                    requestBody:
+                        description: Crée un nouveau token JWT
+                        content:
+                            application/json:
+                                schema:
+                                    $ref: '#/components/schemas/Credentials'
+                    responses:
+                        '200':
+                            description: Récupère le token JWT
+                            content:
+                                application/json:
+                                    schema:
+                                        $ref: '#/components/schemas/Token'
+            /api/book:
+                get:
+                    tags:
+                        - Read Books
+            /api/book/{id}:
+                get:
+                    tags:
+                        - Read Books
+            /api/book/update/{id}:
+                put:
+                    tags:
+                        - Modify book
+            /api/book/delete/{id}:
+                delete:
+                    tags:
+                        - Modify book
+            /api/book/create:
+                post:
+                    tags:
+                        - Modify book
+        components:
+            schemas:
+                Token:
+                    type: object
+                    properties:
+                        token:
+                            type: string
+                            readOnly: true
+                Credentials:
+                    type: object
+                    properties:
+                        username:
+                            type: string
+                            default: admin@gmail.com
+                        password:
+                            type: string
+                            default: password
+            securitySchemes:
+                bearerAuth:
+                    type: apiKey
+                    in: header
+                    name: Authorization # or another header name
+        security:
+            - bearerAuth: []
+    areas: # to filter documented areas
+        default:
+            path_patterns:
+                - ^/api(?!/doc$) # Accepts routes under /api except /api/doc
+                
