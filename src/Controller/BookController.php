@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Book;
 use App\Repository\AuthorRepository;
 use App\Repository\BookRepository;
+use App\Service\VersioningService;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,19 +21,20 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 class BookController extends AbstractController
 {
     #[Route('/api/book', name: 'book.get.all', methods: ['GET'])]
-    public function getBookList(BookRepository $bookRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cache): JsonResponse
+    public function getBookList(BookRepository $bookRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cache,
+        VersioningService $versioningService
+    ): JsonResponse
     {
-        $user = $this->getUser();
+        $version = $versioningService->getVersion();
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 3);
-        return $this->json($user, 200);
-
         $idCache = "getBookList-$page-$limit";
 
-        $jsonBookList = $cache->get($idCache, function (ItemInterface $item) use ($bookRepository, $page, $limit, $serializer) {
+        $jsonBookList = $cache->get($idCache, function (ItemInterface $item) use ($bookRepository, $page, $limit, $serializer, $version) {
             $item->tag("booksCache");
             $bookList = $bookRepository->getPaginatedListBook($page, $limit);
             $context = SerializationContext::create()->setGroups(["getbooks"]);
+            $context->setVersion($version);
             return $serializer->serialize($bookList, 'json', $context);
         });
 
@@ -40,9 +42,11 @@ class BookController extends AbstractController
     }
 
     #[Route('/api/book/{id}', name: 'book.get.one', methods: ['GET'])]
-    public function getDetailBook(Book $book, SerializerInterface $serializer): JsonResponse
+    public function getDetailBook(Book $book, SerializerInterface $serializer, VersioningService $versioningService): JsonResponse
     {
+        $version = $versioningService->getVersion();
         $context = SerializationContext::create()->setGroups(["getbooks"]);
+        $context->setVersion($version);
         $jsonBook = $serializer->serialize($book, 'json', $context);
         
         return new JsonResponse($jsonBook, Response::HTTP_OK, ['accept' => 'json'], true);
@@ -85,6 +89,7 @@ class BookController extends AbstractController
         
         $currentBook->setTitle($newBook->getTitle());
         $currentBook->setContent($newBook->getContent());
+        $currentBook->setComment($newBook->getComment());
         $currentBook->setAuthor($authorRepository->find($requestData['author_id']?? -1));
         
         $bookRepository->save($currentBook, true);
@@ -93,8 +98,8 @@ class BookController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT, ['accept' => 'json']);
     }
 
-    #[IsGranted("ROLE_ADMIN")]
     #[Route('/api/book/delete/{id}', name: 'book.delete.one', methods: ['DELETE'])]
+    #[IsGranted("ROLE_ADMIN")]
     public function deleteBook(Book $book, SerializerInterface $serializer, BookRepository $bookRepository, TagAwareCacheInterface $cache): JsonResponse
     {
         $bookRepository->remove($book, true);

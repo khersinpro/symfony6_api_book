@@ -6,6 +6,7 @@ use App\Repository\BookRepository;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Groups;
 use Hateoas\Configuration\Annotation as Hateoas;
+use JMS\Serializer\Annotation\Since;
 use Symfony\Component\Validator\Constraints as Assert;
 
 
@@ -49,14 +50,19 @@ class Book
     #[Groups(['getbooks'])]
     #[Assert\NotBlank(message: 'Ce champ ne doit pas être vide.')]
     #[Assert\Length(min: 2, max: 255, 
-        minMessage: 'Ce champ doit contenir au minimum {{ limit }} caractères.', 
-        maxMessage: 'Ce champ ne doit pas contenir plus de {{ limit }} caractères.'
+    minMessage: 'Ce champ doit contenir au minimum {{ limit }} caractères.', 
+    maxMessage: 'Ce champ ne doit pas contenir plus de {{ limit }} caractères.'
     )]
     private ?string $content = null;
     
     #[ORM\ManyToOne(inversedBy: 'books',targetEntity: Author::class)]
     #[Groups(['getbooks'])]
     private ?author $author = null;
+    
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['getbooks'])]
+    #[Since('2.0')]
+    private ?string $comment = null;
 
     public function getId(): ?int
     {
@@ -95,6 +101,18 @@ class Book
     public function setAuthor(?author $author): self
     {
         $this->author = $author;
+
+        return $this;
+    }
+
+    public function getComment(): ?string
+    {
+        return $this->comment;
+    }
+
+    public function setComment(?string $comment): self
+    {
+        $this->comment = $comment;
 
         return $this;
     }
