@@ -6,6 +6,8 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
+
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
@@ -16,15 +18,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
+    #[Assert\NotBlank(message: 'Ce champ ne doit pas être vide.')]
+    #[Assert\Email(message: '{{ value }} n\'est pas un email valide.')]
     private ?string $email = null;
-
+    
     #[ORM\Column]
     private array $roles = [];
-
+    
     /**
      * @var string The hashed password
      */
     #[ORM\Column]
+    #[Assert\NotBlank(message: 'Ce champ ne doit pas être vide.')]
+    #[Assert\Length(min: 6, max: 20, 
+        minMessage: 'Ce champ doit contenir au minimum {{ limit }} caractères.', 
+        maxMessage: 'Ce champ ne doit pas contenir plus de {{ limit }} caractères.'
+    )]
     private ?string $password = null;
 
     public function getId(): ?int

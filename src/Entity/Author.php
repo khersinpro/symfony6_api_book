@@ -7,6 +7,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
+
 
 #[ORM\Entity(repositoryClass: AuthorRepository::class)]
 class Author
@@ -19,6 +21,11 @@ class Author
     
     #[ORM\Column(length: 255)]
     #[Groups(['getbooks'])]
+    #[Assert\NotBlank(message: 'Ce champ ne doit pas être vide.')]
+    #[Assert\Length(min: 2, max: 45, 
+        minMessage: 'Ce champ doit contenir au minimum {{ limit }} caractères.', 
+        maxMessage: 'Ce champ ne doit pas contenir plus de {{ limit }} caractères.'
+    )]
     private ?string $name = null;
 
     #[ORM\OneToMany(mappedBy: 'author', targetEntity: Book::class)]
